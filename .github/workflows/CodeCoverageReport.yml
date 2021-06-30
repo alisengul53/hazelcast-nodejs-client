@@ -1,49 +1,40 @@
  name: Report coverage to Codecov
   
-  on: [push, pull_request]
+ on: [push, pull_request]
 
-#     [push, pull_request]
-#    push:
-#     branches: 
-#        - master
-#        - 4.*.z
-#    pull_request:
-#      branches: 
-#        - master
-#        - 4.*.z
-  jobs:
-    build-branch:
-      runs-on: ubuntu-latest
+ jobs:
+   build-branch:
+     runs-on: ubuntu-latest
 
-      name: Test coverage report
-      steps:
-      
-      - name: Checkout the code
-        uses: actions/checkout@v2
-        
-      - name: Install JDK
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'adopt'
-          java-version: '8'
+     name: Test coverage report
+     steps:
 
-      - uses: actions/setup-node@v2
-        with:
-            node-version: '14'
-        
-      - name: Install dependencies
-        run : | 
-            npm install
-            npm run compile
-        
-      - name: Set up Maven
-        uses: stCarolas/setup-maven@v4
-        with:
-          maven-version: 3.8.1
-      - name: Run tests
-        env:
-          HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
-        run : npm test
-    
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+     - name: Checkout the code
+       uses: actions/checkout@v2
+
+     - name: Install JDK
+       uses: actions/setup-java@v2
+       with:
+         distribution: 'adopt'
+         java-version: '8'
+
+     - uses: actions/setup-node@v2
+       with:
+           node-version: '14'
+
+     - name: Install dependencies
+       run : | 
+           npm install
+           npm run compile
+
+     - name: Set up Maven
+       uses: stCarolas/setup-maven@v4
+       with:
+         maven-version: 3.8.1
+     - name: Run tests
+       env:
+         HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
+       run : npm test
+
+     - name: Setup tmate session
+       uses: mxschmitt/action-tmate@v3
