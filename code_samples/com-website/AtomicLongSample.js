@@ -21,23 +21,17 @@ const { Client } = require('hazelcast-client');
     try {
         // Start the Hazelcast Client and connect to an already running
         // Hazelcast Cluster on 127.0.0.1
+        // Note: CP Subsystem has to be enabled on the cluster
         const hz = await Client.newHazelcastClient();
-        // Get a Queue called 'my-distributed-queue'
-        const queue = await hz.getQueue('my-distributed-queue');
-        // Offer a string into the Distributed Queue
-        await queue.offer('item');
-        // Poll the Distributed Queue and return the string
-        await queue.poll();
-        // Timed-restricted operations
-        await queue.offer('anotheritem', 500);
-        await queue.poll(5000);
-        // Indefinitely-waiting operations
-        await queue.put('yetanotheritem');
-        const item = await await queue.take();
-        console.log(item);
-        // Shutdown this Hazelcast Client
+        // Get the AtomicLong counter from Cluster
+        const counter = await hz.getCPSubsystem().getAtomicLong('counter');
+        // Add and get the counter
+        const value = await counter.addAndGet(3);
+        console.log('Counter value is', value);
+        // Shutdown this Hazelcast client
         await hz.shutdown();
     } catch (err) {
         console.error('Error occurred:', err);
+        process.exit(1);
     }
 })();

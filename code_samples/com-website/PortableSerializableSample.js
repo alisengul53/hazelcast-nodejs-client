@@ -16,29 +16,33 @@
 'use strict';
 
 const { Client } = require('hazelcast-client');
+const Long = require('long');
 
-class Employee {
-    constructor(id, name) {
-        this.id = id;
+class Customer {
+    constructor(name, id, lastOrder) {
         this.name = name;
-        this.factoryId = 1000;
-        this.classId = 100;
+        this.id = id;
+        this.lastOrder = lastOrder;
+        this.factoryId = 1;
+        this.classId = 1;
     }
 
-    readData(input) {
-        this.id = input.readInt();
-        this.name = input.readString();
+    readPortable(reader) {
+        this.name = reader.readString('name');
+        this.id = reader.readInt('id');
+        this.lastOrder = reader.readLong('lastOrder').toNumber();
     }
 
-    writeData(output) {
-        output.writeInt(this.id);
-        output.writeString(this.name);
+    writePortable(writer) {
+        writer.writeString('name', this.name);
+        writer.writeInt('id', this.id);
+        writer.writeLong('lastOrder', Long.fromNumber(this.lastOrder));
     }
 }
 
-function sampleDataSerializableFactory(classId) {
-    if (classId === 100) {
-        return new Employee();
+function portableFactory(classId) {
+    if (classId === 1) {
+        return new Customer();
     }
     return null;
 }
@@ -49,16 +53,17 @@ function sampleDataSerializableFactory(classId) {
         // Hazelcast Cluster on 127.0.0.1
         const hz = await Client.newHazelcastClient({
             serialization: {
-                dataSerializableFactories: {
-                    1000: sampleDataSerializableFactory
+                portableFactories: {
+                    1: portableFactory
                 }
             }
         });
-        // Employee can be used here
+        // Customer can be used here
 
         // Shutdown this Hazelcast client
         await hz.shutdown();
     } catch (err) {
         console.error('Error occurred:', err);
+        process.exit(1);
     }
 })();

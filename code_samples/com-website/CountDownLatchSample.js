@@ -22,20 +22,31 @@ const { Client } = require('hazelcast-client');
         // Start the Hazelcast Client and connect to an already running
         // Hazelcast Cluster on 127.0.0.1
         const hz = await Client.newHazelcastClient();
-        // Get a Ringbuffer called 'rb'
-        const rb = await hz.getRingbuffer('rb');
-        await rb.add(100);
-        let value = await rb.add(200);
-        // We start from the oldest item. If you want to start from
-        // the next item, call rb.tailSequence()+1
-        const sequence = await rb.headSequence();
-        value = await rb.readOne(sequence);
-        console.log('Head value:', value);
-        value = await rb.readOne(sequence.add(1));
-        console.log('Next value:', value);
+        // Get the Distributed CountDownLatch from CP Subsystem
+        const latch = await hz.getCPSubsystem().getCountDownLatch('my-latch');
+        // Initialize the latch
+        const initialized = await latch.trySetCount(3);
+        console.log('Initialized:', initialized);
+        // Check count
+        let count = await latch.getCount();
+        console.log('Count:', count);
+        // Wait up to 5 seconds for the count to become zero
+        try {
+            await latch.await(5000);
+            console.log('Returned from await()');
+        } catch (err) {
+            console.error('await() call failed:', err);
+        }
+        // Bring the count down to zero
+        for (let i = 0; i < 3; i++) {
+            await latch.countDown();
+            count = await latch.getCount();
+            console.log('Current count:', count);
+        }
         // Shutdown this Hazelcast client
         await hz.shutdown();
     } catch (err) {
         console.error('Error occurred:', err);
+        process.exit(1);
     }
 })();

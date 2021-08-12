@@ -21,16 +21,21 @@ const { Client } = require('hazelcast-client');
     try {
         // Start the Hazelcast Client and connect to an already running
         // Hazelcast Cluster on 127.0.0.1
-        // Note: CP Subsystem has to be enabled on the cluster
         const hz = await Client.newHazelcastClient();
-        // Get the AtomicLong counter from Cluster
-        const counter = await hz.getCPSubsystem().getAtomicLong('counter');
-        // Add and get the counter
-        const value = await counter.addAndGet(3);
-        console.log('Counter value is', value);
+        // Get a Replicated Map called 'my-replicated-map'
+        const map = await hz.getReplicatedMap('my-replicated-map');
+        // Put and Get a value from the Replicated Map
+        // (key/value is replicated to all members)
+        const replacedValue = await map.put('key', 'value');
+        // Will print 'Replaced value: null' as it's the first update
+        console.log('Replaced value:', replacedValue);
+        const value = await map.get('key');
+        // The value is retrieved from a random member in the cluster
+        console.log('Value for key:', value);
         // Shutdown this Hazelcast client
         await hz.shutdown();
     } catch (err) {
         console.error('Error occurred:', err);
+        process.exit(1);
     }
 })();

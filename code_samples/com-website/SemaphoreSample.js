@@ -22,19 +22,26 @@ const { Client } = require('hazelcast-client');
         // Start the Hazelcast Client and connect to an already running
         // Hazelcast Cluster on 127.0.0.1
         const hz = await Client.newHazelcastClient();
-        // Get a Replicated Map called 'my-replicated-map'
-        const map = await hz.getReplicatedMap('my-replicated-map');
-        // Put and Get a value from the Replicated Map
-        // (key/value is replicated to all members)
-        const replacedValue = await map.put('key', 'value');
-        // Will print 'Replaced value: null' as it's the first update
-        console.log('Replaced value:', replacedValue);
-        const value = await map.get('key');
-        // The value is retrieved from a random member in the cluster
-        console.log('Value for key:', value);
+        // Get the Distributed Semaphore from CP Subsystem
+        const semaphore = await hz.getCPSubsystem().getSemaphore('my-semaphore');
+        // Initialize the semaphore
+        const initialized = await semaphore.init(3);
+        console.log('Initialized:', initialized);
+        // Check number of available permits
+        let available = await semaphore.availablePermits();
+        console.log('Available:', available);
+        // Now acquire permits
+        await semaphore.acquire(3);
+        available = await semaphore.availablePermits();
+        console.log('Available after acquire:', available);
+        // Release some permits
+        await semaphore.release(2);
+        available = await semaphore.availablePermits();
+        console.log('Available after release:', available);
         // Shutdown this Hazelcast client
         await hz.shutdown();
     } catch (err) {
         console.error('Error occurred:', err);
+        process.exit(1);
     }
 })();

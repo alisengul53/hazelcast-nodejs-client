@@ -17,24 +17,28 @@
 
 const { Client } = require('hazelcast-client');
 
-class IdentifiedEntryProcessor {
-    constructor() {
-        this.factoryId = 1;
-        this.classId = 9;
+class Employee {
+    constructor(id, name) {
+        this.id = id;
+        this.name = name;
+        this.factoryId = 1000;
+        this.classId = 100;
     }
 
-    readData() {
-        // no-op
+    readData(input) {
+        this.id = input.readInt();
+        this.name = input.readString();
     }
 
-    writeData() {
-        // no-op
+    writeData(output) {
+        output.writeInt(this.id);
+        output.writeString(this.name);
     }
 }
 
-function entryProcessorDataSerializableFactory(classId) {
-    if (classId === 1) {
-        return new IdentifiedEntryProcessor();
+function sampleDataSerializableFactory(classId) {
+    if (classId === 100) {
+        return new Employee();
     }
     return null;
 }
@@ -46,23 +50,16 @@ function entryProcessorDataSerializableFactory(classId) {
         const hz = await Client.newHazelcastClient({
             serialization: {
                 dataSerializableFactories: {
-                    1: entryProcessorDataSerializableFactory
+                    1000: sampleDataSerializableFactory
                 }
             }
         });
-        // Get the Distributed Map from Cluster
-        const map = hz.getMap('my-distributed-map');
-        // Put the double value of 0 into the Distributed Map
-        await map.put('key', 0);
-        // Run the IdentifiedEntryProcessor class on the Cluster Member
-        // holding the key called 'key'
-        await map.executeOnKey('key', new IdentifiedEntryProcessor());
-        // Show that the IdentifiedEntryProcessor updated the value
-        const value = await map.get('key');
-        console.log(value);
+        // Employee can be used here
+
         // Shutdown this Hazelcast client
         await hz.shutdown();
     } catch (err) {
         console.error('Error occurred:', err);
+        process.exit(1);
     }
 })();

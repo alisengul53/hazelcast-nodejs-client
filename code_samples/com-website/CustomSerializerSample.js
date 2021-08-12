@@ -17,22 +17,50 @@
 
 const { Client } = require('hazelcast-client');
 
+class CustomSerializable {
+    constructor(value) {
+        this.value = value;
+        this.hzCustomId = 10;
+    }
+}
+
+class CustomSerializer {
+    constructor() {
+        this.id = 10;
+    }
+
+    read(input) {
+        const len = input.readInt();
+        let str = '';
+        for (let i = 0; i < len; i++) {
+            str = str + String.fromCharCode(input.readInt());
+        }
+        return new CustomSerializable(str);
+    }
+
+    write(output, obj) {
+        output.writeInt(obj.value.length);
+        for (let i = 0; i < obj.value.length; i++) {
+            output.writeInt(obj.value.charCodeAt(i));
+        }
+    }
+}
+
 (async () => {
     try {
         // Start the Hazelcast Client and connect to an already running
         // Hazelcast Cluster on 127.0.0.1
-        const hz = await Client.newHazelcastClient();
-        // Get the Distributed Map from Cluster
-        const map = await hz.getMap('my-distributed-map');
-        // Standard Put and Get
-        await map.put('key', 'value');
-        await map.get('key');
-        // Concurrent Map methods, optimistic updating
-        await map.putIfAbsent('somekey', 'somevalue');
-        await map.replace('key', 'value', 'newvalue');
+        const hz = await Client.newHazelcastClient({
+            serialization: {
+                customSerializers: [new CustomSerializer()]
+            }
+        });
+        // CustomSerializer will serialize/deserialize CustomSerializable objects
+
         // Shutdown this Hazelcast client
         await hz.shutdown();
     } catch (err) {
         console.error('Error occurred:', err);
+        process.exit(1);
     }
 })();

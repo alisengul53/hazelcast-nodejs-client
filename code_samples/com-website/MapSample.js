@@ -22,21 +22,18 @@ const { Client } = require('hazelcast-client');
         // Start the Hazelcast Client and connect to an already running
         // Hazelcast Cluster on 127.0.0.1
         const hz = await Client.newHazelcastClient();
-        // Get the Distributed Set from Cluster
-        const set = await hz.getSet('my-distributed-set');
-        // Add items to the set with duplicates
-        await set.add('item1');
-        await set.add('item1');
-        await set.add('item2');
-        await set.add('item2');
-        await set.add('item2');
-        await set.add('item3');
-        // Get the items. Note that there are no duplicates
-        const items = await set.toArray();
-        console.log(items);
+        // Get the Distributed Map from Cluster
+        const map = await hz.getMap('my-distributed-map');
+        // Standard Put and Get
+        await map.put('key', 'value');
+        await map.get('key');
+        // Concurrent Map methods, optimistic updating
+        await map.putIfAbsent('somekey', 'somevalue');
+        await map.replace('key', 'value', 'newvalue');
         // Shutdown this Hazelcast client
         await hz.shutdown();
     } catch (err) {
         console.error('Error occurred:', err);
+        process.exit(1);
     }
 })();

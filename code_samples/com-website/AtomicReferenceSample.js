@@ -17,49 +17,25 @@
 
 const { Client } = require('hazelcast-client');
 
-class CustomSerializable {
-    constructor(value) {
-        this.value = value;
-        this.hzCustomId = 10;
-    }
-}
-
-class CustomSerializer {
-    constructor() {
-        this.id = 10;
-    }
-
-    read(input) {
-        const len = input.readInt();
-        let str = '';
-        for (let i = 0; i < len; i++) {
-            str = str + String.fromCharCode(input.readInt());
-        }
-        return new CustomSerializable(str);
-    }
-
-    write(output, obj) {
-        output.writeInt(obj.value.length);
-        for (let i = 0; i < obj.value.length; i++) {
-            output.writeInt(obj.value.charCodeAt(i));
-        }
-    }
-}
-
 (async () => {
     try {
         // Start the Hazelcast Client and connect to an already running
         // Hazelcast Cluster on 127.0.0.1
-        const hz = await Client.newHazelcastClient({
-            serialization: {
-                customSerializers: [new CustomSerializer()]
-            }
-        });
-        // CustomSerializer will serialize/deserialize CustomSerializable objects
-
+        const hz = await Client.newHazelcastClient();
+        // Get the Distributed AtomicReference from CP Subsystem
+        const ref = await hz.getCPSubsystem().getAtomicReference('my-ref');
+        // Set the value atomically
+        await ref.set(42);
+        // Read the value
+        const value = await ref.get();
+        console.log('Value:', value);
+        // Perform compare-and-set atomic operation
+        const result = await ref.compareAndSet(42, 'value');
+        console.log('CAS result:', result);
         // Shutdown this Hazelcast client
         await hz.shutdown();
     } catch (err) {
         console.error('Error occurred:', err);
+        process.exit(1);
     }
 })();

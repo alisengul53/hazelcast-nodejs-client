@@ -22,25 +22,20 @@ const { Client } = require('hazelcast-client');
         // Start the Hazelcast Client and connect to an already running
         // Hazelcast Cluster on 127.0.0.1
         const hz = await Client.newHazelcastClient();
-        // Get the Distributed Semaphore from CP Subsystem
-        const semaphore = await hz.getCPSubsystem().getSemaphore('my-semaphore');
-        // Initialize the semaphore
-        const initialized = await semaphore.init(3);
-        console.log('Initialized:', initialized);
-        // Check number of available permits
-        let available = await semaphore.availablePermits();
-        console.log('Available:', available);
-        // Now acquire permits
-        await semaphore.acquire(3);
-        available = await semaphore.availablePermits();
-        console.log('Available after acquire:', available);
-        // Release some permits
-        await semaphore.release(2);
-        available = await semaphore.availablePermits();
-        console.log('Available after release:', available);
+        // Get the Distributed Lock from CP Subsystem
+        const lock = await hz.getCPSubsystem().getLock('my-distributed-lock');
+        // Now acquire the lock and execute some guarded code
+        const fence = await lock.lock();
+        console.log('Fence token:', fence);
+        try {
+            // Guarded code goes here
+        } finally {
+            await lock.unlock(fence);
+        }
         // Shutdown this Hazelcast client
         await hz.shutdown();
     } catch (err) {
         console.error('Error occurred:', err);
+        process.exit(1);
     }
 })();
