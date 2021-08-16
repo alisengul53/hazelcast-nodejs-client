@@ -1,11 +1,13 @@
-name: Run tests
+name: Report coverage to Codecov
 on:
     push:
-        branches-ignore:
-            - 'gh-pages'
-        tags-ignore:
-            - '*'
+      branches: 
+        - master
+        - 4.*.x
     pull_request:
+      branches: 
+        - master
+        - 4.*.x
 
 jobs:
     run-tests:
@@ -51,3 +53,7 @@ jobs:
                   HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
               run: |
                   npm run coverage
+            - name: Publish to Codecov 
+              uses: codecov/codecov-action@v2
+              with:
+                files: coverage/cobertura-coverage.xml
