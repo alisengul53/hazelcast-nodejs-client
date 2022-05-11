@@ -34,6 +34,8 @@ jobs:
 
   run-tests:
       name: Run Tests on (${{ matrix.os }})
+      needs: [check_for_membership]
+      if: github.event_name == 'push' || needs.check_for_membership.outputs.check-result == 'true' || github.event_name == 'workflow_dispatch'
       runs-on: ${{ matrix.os }}
 
       strategy:
@@ -78,20 +80,20 @@ jobs:
                 npm run coverage
 
           - name: Publish results to Codecov for PR coming from hazelcast organization
-            if: ${{ github.event_name == 'pull_request_target' }}
+            if: ${{ matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request_target' }}
             uses: codecov/codecov-action@v1
             with:
               files: coverage/lcov.info
               override_pr: ${{ github.event.pull_request.number }}
               
           - name: Publish results to Codecov for Push
-            if: ${{  github.event_name == 'push' }}
+            if: ${{ matrix.os == 'ubuntu-latest' && github.event_name == 'push' }}
             uses: codecov/codecov-action@v1
             with:
               files: coverage/lcov.info
               
           - name: Publish result to Codecov for PR coming from community
-            if: ${{ github.event_name == 'workflow_dispatch' }}
+            if: ${{ matrix.os == 'ubuntu-latest' && github.event_name == 'workflow_dispatch' }}
             uses: codecov/codecov-action@v1
             with:
               files: coverage/lcov.info
