@@ -24,7 +24,7 @@
 provides a wide variety of distributed data structures and concurrency primitives.
 
 Hazelcast Node.js client is a way to communicate to Hazelcast clusters and access the cluster data.
-The client provides a Promise-based API with a builtin support for native JavaScript objects..
+The client provides a Promise-based API with a builtin support for native JavaScript objects...
 
 ## Installation
 
